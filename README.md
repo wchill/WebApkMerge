@@ -70,9 +70,9 @@ These operations need to be implemented according to the CheerpJ 3.0 API documen
 
 ```
 User selects file → 
-Write to /app/input/ → 
+Write to /files/input/ → 
 Run APKEditor.jar → 
-Read from /app/output/ → 
+Read from /files/output/ → 
 Download processed file
 ```
 
