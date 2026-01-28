@@ -9,7 +9,6 @@ import {
   appendToConsole 
 } from './ui';
 import { 
-  cheerpjCreateDirectory, 
   cheerpjWriteFile, 
   cheerpjReadFileAsBlob 
 } from './cheerpj';
@@ -32,8 +31,10 @@ export async function processFile(file: File): Promise<void> {
   
   try {
     // Create virtual file system paths
-    const inputPath = '/files/input/' + file.name;
+    // Input file goes to /str/ (JavaScript writes here, Java reads from here)
+    const inputPath = '/str/' + file.name;
     const outputFileName = file.name.replace(/\.(apkm|xapk|apks)$/i, '_merged.apk');
+    // Output file goes to /files/ (Java writes here, JavaScript reads from here)
     const outputPath = '/files/output/' + outputFileName;
     
     updateProgress(30);
@@ -46,11 +47,8 @@ export async function processFile(file: File): Promise<void> {
     showStatus('Writing file to virtual filesystem...', 'info');
     appendToConsole('Writing file to virtual filesystem...', 'info');
     
-    // Write input file to CheerpJ virtual filesystem
-    await cheerpjCreateDirectory('/files');
-    await cheerpjCreateDirectory('/files/input');
-    await cheerpjCreateDirectory('/files/output');
-    
+    // Write input file to CheerpJ /str/ virtual filesystem
+    // No need to create directories for /str/ - it's automatically available
     // Write the file data to virtual filesystem
     await cheerpjWriteFile(inputPath, fileData);
     appendToConsole(`File written to: ${inputPath}`, 'stdout');

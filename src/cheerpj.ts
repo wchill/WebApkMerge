@@ -4,6 +4,9 @@ import { showStatus, hideProgress } from './ui';
 declare global {
   interface Window {
     cheerpjInit: () => Promise<void>;
+    cheerpjRunJar: (jarPath: string, ...args: string[]) => Promise<number>;
+    cheerpOSAddStringFile: (path: string, data: string | Uint8Array) => void;
+    cjFileBlob: (path: string) => Promise<Blob>;
   }
 }
 
@@ -43,38 +46,31 @@ export async function cheerpjCreateDirectory(path: string): Promise<void> {
 }
 
 export async function cheerpjWriteFile(path: string, fileData: Uint8Array): Promise<void> {
-  // This is a placeholder for CheerpJ 3.0 file writing API
-  // The actual implementation should use CheerpJ's filesystem API
-  // Example: await cheerpOSAddFile(path, fileData);
+  // Use CheerpJ's cheerpOSAddStringFile API to write files to /str/ virtual filesystem
+  // This makes the file accessible from Java code
   
-  if (typeof (window as any).cheerpOSAddFile === 'undefined') {
+  if (typeof window.cheerpOSAddStringFile === 'undefined') {
     throw new Error('CheerpJ filesystem API not available. File write operation cannot be completed.');
   }
   
   console.log('Writing file to:', path, 'Size:', fileData.length, 'bytes');
-  // Actual implementation:
-  // await cheerpOSAddFile(path, fileData);
+  
+  // Write the file to the virtual filesystem
+  // cheerpOSAddStringFile accepts both strings and Uint8Array
+  window.cheerpOSAddStringFile(path, fileData);
 }
 
 export async function cheerpjReadFileAsBlob(path: string): Promise<Blob> {
-  // This is a placeholder for CheerpJ 3.0 file reading API
-  // The actual implementation should use CheerpJ's filesystem API
-  // Example: return await cheerpOSReadFileAsBlob(path);
+  // Use CheerpJ's cjFileBlob API to read files from /files/ virtual filesystem
+  // This reads files that were written by Java code
   
-  if (typeof (window as any).cheerpOSReadFileAsBlob === 'undefined') {
+  if (typeof window.cjFileBlob === 'undefined') {
     throw new Error('CheerpJ filesystem API not available. File read operation cannot be completed.');
   }
   
   console.log('Reading file from:', path);
-  // Actual implementation:
-  // return await cheerpOSReadFileAsBlob(path);
   
-  // Placeholder - this will be replaced by actual CheerpJ API call
-  throw new Error('CheerpJ filesystem not fully initialized');
-}
-
-declare global {
-  interface Window {
-    cheerpjRunJar: (jarPath: string, ...args: string[]) => Promise<number>;
-  }
+  // Read the file as a Blob
+  const blob = await window.cjFileBlob(path);
+  return blob;
 }
