@@ -18,6 +18,7 @@ const consoleHeader = document.getElementById('consoleHeader');
 const consoleBody = document.getElementById('consoleBody');
 const consoleToggle = document.getElementById('consoleToggle');
 const consoleClearBtn = document.getElementById('consoleClearBtn');
+const consoleCopyBtn = document.getElementById('consoleCopyBtn');
 
 // Initialize CheerpJ
 async function initCheerpJ() {
@@ -132,9 +133,13 @@ async function processFile(file) {
     showProgress();
     updateProgress(20);
     
-    // Show and clear console
+    // Show and clear console, auto-expand it
     showConsole();
     clearConsole();
+    consoleExpanded = true;
+    consoleBody.classList.add('show');
+    consoleToggle.classList.add('expanded');
+    consoleHeader.setAttribute('aria-expanded', 'true');
     appendToConsole('=== Starting APKEditor Process ===', 'info');
     appendToConsole(`Input file: ${file.name} (${formatFileSize(file.size)})`, 'info');
     
@@ -225,7 +230,9 @@ async function processFile(file) {
         showStatus(errorMessage, 'error');
         appendToConsole('=== ERROR ===', 'stderr');
         appendToConsole(error.message, 'stderr');
-        appendToConsole(error.stack || '', 'stderr');
+        if (error.stack) {
+            appendToConsole(error.stack, 'stderr');
+        }
         hideProgress();
         console.error('Processing error:', error);
     }
@@ -308,6 +315,7 @@ function toggleConsole() {
     consoleExpanded = !consoleExpanded;
     consoleBody.classList.toggle('show', consoleExpanded);
     consoleToggle.classList.toggle('expanded', consoleExpanded);
+    consoleHeader.setAttribute('aria-expanded', consoleExpanded.toString());
 }
 
 function appendToConsole(message, type = 'stdout') {
@@ -316,20 +324,65 @@ function appendToConsole(message, type = 'stdout') {
     line.textContent = message;
     consoleBody.appendChild(line);
     
-    // Auto-scroll to bottom
-    consoleBody.scrollTop = consoleBody.scrollHeight;
+    // Auto-scroll to bottom only if console is expanded
+    if (consoleExpanded) {
+        consoleBody.scrollTop = consoleBody.scrollHeight;
+    }
 }
 
 function clearConsole() {
     consoleBody.innerHTML = '';
 }
 
+async function copyConsoleToClipboard() {
+    try {
+        // Get all console lines
+        const lines = consoleBody.querySelectorAll('.console-line');
+        const text = Array.from(lines).map(line => line.textContent).join('\n');
+        
+        if (!text) {
+            showStatus('Console is empty, nothing to copy', 'info');
+            return;
+        }
+        
+        // Copy to clipboard
+        await navigator.clipboard.writeText(text);
+        
+        // Show feedback
+        consoleCopyBtn.textContent = '✓ Copied!';
+        consoleCopyBtn.classList.add('copied');
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+            consoleCopyBtn.textContent = 'Copy';
+            consoleCopyBtn.classList.remove('copied');
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Failed to copy to clipboard:', error);
+        showStatus('Failed to copy to clipboard', 'error');
+    }
+}
+
 // Console event listeners
 consoleHeader.addEventListener('click', toggleConsole);
+
+// Add keyboard support for console header
+consoleHeader.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleConsole();
+    }
+});
 
 consoleClearBtn.addEventListener('click', (e) => {
     e.stopPropagation(); // Prevent toggle when clicking clear
     clearConsole();
+});
+
+consoleCopyBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent toggle when clicking copy
+    copyConsoleToClipboard();
 });
 
 // Initialize on page load
