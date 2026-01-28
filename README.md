@@ -7,6 +7,12 @@ A web application that wraps the APKEditor Java command-line tool using CheerpJ,
 - 📁 **File Upload**: Drag and drop or click to select APK, XAPK, or APKS files
 - 🚀 **Browser-based Processing**: Runs Java applications directly in the browser using CheerpJ
 - 💾 **Easy Download**: Automatically downloads the processed file
+- 📱 **Push to Phone**: Copy merged APK directly to your Android device via WebUSB
+  - Uses ya-webadb for ADB connection through the browser
+  - Automatically detects WebUSB support
+  - Pushes APK to `/data/local/tmp/` on your device
+  - Shows real-time transfer progress
+  - Only available in browsers that support WebUSB (Chrome, Edge)
 - 🎨 **Modern UI**: Clean and intuitive user interface
 - 🖥️ **Terminal Console**: View real-time output from APKEditor processing
   - Hidden by default, automatically shown and expanded during processing
@@ -61,6 +67,28 @@ Then open `http://localhost:8000` in your browser.
 5. Wait for processing to complete
 6. The processed file will automatically download
 
+### Push to Phone (WebUSB)
+
+After processing your APK, you can push it directly to your Android device:
+
+1. **Enable USB Debugging** on your Android device:
+   - Go to Settings > About Phone
+   - Tap "Build Number" 7 times to enable Developer Options
+   - Go to Settings > Developer Options
+   - Enable "USB Debugging"
+2. Connect your Android device to your computer via USB
+3. Click the **"📱 Push to Phone"** button (appears after processing)
+4. Select your device from the browser's USB device picker
+5. The APK will be pushed to `/data/local/tmp/` on your device
+6. You can then install it using a file manager or `adb install`
+
+**Requirements:**
+- WebUSB-compatible browser (Chrome 61+, Edge 79+, Opera 48+)
+- USB debugging enabled on Android device
+- USB connection between computer and device
+
+**Note:** If the "Push to Phone" button doesn't appear, your browser may not support WebUSB.
+
 ### Console Output
 
 The application includes a terminal-like console that displays output from the APKEditor processing:
@@ -102,11 +130,18 @@ Download processed file
 
 ### Browser Compatibility
 
+**General Features:**
 - Modern browsers with WebAssembly support
 - Chrome 57+
 - Firefox 52+
 - Safari 11+
 - Edge 16+
+
+**Push to Phone Feature (WebUSB):**
+- Chrome 61+
+- Edge 79+
+- Opera 48+
+- **Not supported:** Firefox, Safari (WebUSB not implemented)
 
 ## License
 
