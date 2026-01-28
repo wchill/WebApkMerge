@@ -1,6 +1,7 @@
 // State management
 let selectedFile = null;
 let cheerpjReady = false;
+let consoleExpanded = false;
 
 // DOM elements
 const uploadArea = document.getElementById('uploadArea');
@@ -12,6 +13,11 @@ const processBtn = document.getElementById('processBtn');
 const status = document.getElementById('status');
 const progressBar = document.getElementById('progressBar');
 const progressFill = document.getElementById('progressFill');
+const consoleContainer = document.getElementById('consoleContainer');
+const consoleHeader = document.getElementById('consoleHeader');
+const consoleBody = document.getElementById('consoleBody');
+const consoleToggle = document.getElementById('consoleToggle');
+const consoleClearBtn = document.getElementById('consoleClearBtn');
 
 // Initialize CheerpJ
 async function initCheerpJ() {
@@ -126,6 +132,12 @@ async function processFile(file) {
     showProgress();
     updateProgress(20);
     
+    // Show and clear console
+    showConsole();
+    clearConsole();
+    appendToConsole('=== Starting APKEditor Process ===', 'info');
+    appendToConsole(`Input file: ${file.name} (${formatFileSize(file.size)})`, 'info');
+    
     try {
         // Create virtual file system paths
         const inputPath = '/files/input/' + file.name;
@@ -140,6 +152,7 @@ async function processFile(file) {
         
         updateProgress(40);
         showStatus('Writing file to virtual filesystem...', 'info');
+        appendToConsole('Writing file to virtual filesystem...', 'info');
         
         // Write input file to CheerpJ virtual filesystem
         await cheerpjCreateDirectory('/files');
@@ -148,9 +161,11 @@ async function processFile(file) {
         
         // Write the file data to virtual filesystem
         await cheerpjWriteFile(inputPath, fileData);
+        appendToConsole(`File written to: ${inputPath}`, 'stdout');
         
         updateProgress(50);
         showStatus('Running APKEditor...', 'info');
+        appendToConsole(`Executing: java -jar /app/APKEditor.jar m -i ${inputPath} -o ${outputPath}`, 'info');
         
         // Run the Java application
         // Command: java -jar /app/APKEditor.jar m -i <input> -o <output>
@@ -160,14 +175,19 @@ async function processFile(file) {
         updateProgress(70);
         
         if (result !== 0) {
+            appendToConsole(`APKEditor exited with code: ${result}`, 'stderr');
             throw new Error(`APKEditor exited with code ${result}`);
         }
         
+        appendToConsole(`APKEditor completed successfully (exit code: ${result})`, 'stdout');
+        
         showStatus('Reading processed file...', 'info');
         updateProgress(80);
+        appendToConsole('Reading processed file from virtual filesystem...', 'info');
         
         // Read the output file from virtual filesystem
         const outputBlob = await cheerpjReadFileAsBlob(outputPath);
+        appendToConsole(`Output file read: ${outputPath}`, 'stdout');
         
         updateProgress(90);
         showStatus('Preparing download...', 'info');
@@ -185,6 +205,7 @@ async function processFile(file) {
         
         updateProgress(100);
         showStatus('File processed and downloaded successfully!', 'success');
+        appendToConsole(`=== Process Complete: ${outputFileName} downloaded ===`, 'info');
         
         // Hide progress after a delay
         setTimeout(hideProgress, 2000);
@@ -202,6 +223,9 @@ async function processFile(file) {
         }
         
         showStatus(errorMessage, 'error');
+        appendToConsole('=== ERROR ===', 'stderr');
+        appendToConsole(error.message, 'stderr');
+        appendToConsole(error.stack || '', 'stderr');
         hideProgress();
         console.error('Processing error:', error);
     }
@@ -270,6 +294,43 @@ function updateProgress(percent) {
     progressFill.style.width = percent + '%';
     progressBar.setAttribute('aria-valuenow', percent);
 }
+
+// Console functions
+function showConsole() {
+    consoleContainer.classList.add('show');
+}
+
+function hideConsole() {
+    consoleContainer.classList.remove('show');
+}
+
+function toggleConsole() {
+    consoleExpanded = !consoleExpanded;
+    consoleBody.classList.toggle('show', consoleExpanded);
+    consoleToggle.classList.toggle('expanded', consoleExpanded);
+}
+
+function appendToConsole(message, type = 'stdout') {
+    const line = document.createElement('div');
+    line.className = `console-line ${type}`;
+    line.textContent = message;
+    consoleBody.appendChild(line);
+    
+    // Auto-scroll to bottom
+    consoleBody.scrollTop = consoleBody.scrollHeight;
+}
+
+function clearConsole() {
+    consoleBody.innerHTML = '';
+}
+
+// Console event listeners
+consoleHeader.addEventListener('click', toggleConsole);
+
+consoleClearBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent toggle when clicking clear
+    clearConsole();
+});
 
 // Initialize on page load
 window.addEventListener('load', () => {
