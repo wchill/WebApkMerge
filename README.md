@@ -9,11 +9,13 @@ A web application that wraps the APKEditor Java command-line tool using CheerpJ,
 - 💾 **Easy Download**: Automatically downloads the processed file
 - 🎨 **Modern UI**: Clean and intuitive user interface
 - 🖥️ **Terminal Console**: View real-time output from APKEditor processing
-  - Hidden by default, automatically shown during processing
+  - Hidden by default, automatically shown and expanded during processing
   - Collapsible interface with click-to-expand header
   - Color-coded output (info, stdout, stderr)
+  - Copy button to copy all output to clipboard for error reporting
   - Clear button to reset console output
   - Auto-scrolls to show latest messages
+  - Full keyboard accessibility
 
 ## How It Works
 
@@ -64,13 +66,16 @@ Then open `http://localhost:8000` in your browser.
 The application includes a terminal-like console that displays output from the APKEditor processing:
 
 - **Hidden by default**: The console only appears when you start processing a file
-- **Expand/Collapse**: Click the console header to toggle between collapsed and expanded views
+- **Auto-expands**: The console automatically expands when processing starts to show output
+- **Expand/Collapse**: Click the console header (or press Enter/Space when focused) to toggle between collapsed and expanded views
 - **Color-coded messages**:
   - Cyan: Informational messages about process steps
   - Blue: Standard output from APKEditor
   - Red: Error messages
+- **Copy button**: Click "Copy" to copy all console output to clipboard for error reporting
 - **Clear button**: Click "Clear" to reset the console output
 - **Auto-scroll**: The console automatically scrolls to show the latest output
+- **Keyboard accessible**: Use Tab to focus the console header, then Enter or Space to expand/collapse
 
 ## Technical Details
 

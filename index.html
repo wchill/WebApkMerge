@@ -288,6 +288,26 @@
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
         }
+
+        .console-copy-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .console-copy-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .console-copy-btn.copied {
+            color: #4ec9b0;
+        }
     </style>
 </head>
 <body>
@@ -317,17 +337,18 @@
         <div class="status" id="status" role="status" aria-live="polite"></div>
 
         <div class="console-container" id="consoleContainer">
-            <div class="console-header" id="consoleHeader">
+            <div class="console-header" id="consoleHeader" role="button" tabindex="0" aria-expanded="false" aria-controls="consoleBody">
                 <div class="console-title">
                     <span>🖥️</span>
                     <span>Console Output</span>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="console-copy-btn" id="consoleCopyBtn" title="Copy console output to clipboard">Copy</button>
                     <button class="console-clear-btn" id="consoleClearBtn" title="Clear console">Clear</button>
                     <span class="console-toggle" id="consoleToggle">▼</span>
                 </div>
             </div>
-            <div class="console-body" id="consoleBody"></div>
+            <div class="console-body" id="consoleBody" role="region" aria-label="Console output"></div>
         </div>
     </div>
 
