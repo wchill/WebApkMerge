@@ -1,16 +1,16 @@
 # WebApkMerge
 
-A web application that wraps the APKEditor Java command-line tool using CheerpJ, allowing users to process APK files directly in their browser.
+A web application that wraps the APKEditor Java command-line tool using CheerpJ, allowing users to merge APK bundles (APKM, XAPK, APKS) directly in their browser.
 
 ## Features
 
-- 📁 **File Upload**: Drag and drop or click to select APK, XAPK, or APKS files
+- 📁 **File Upload**: Drag and drop or click to select APK bundle files (APKM, XAPK, or APKS)
 - 🚀 **Browser-based Processing**: Runs Java applications directly in the browser using CheerpJ
 - 💾 **Easy Download**: Automatically downloads the processed file
 - 📱 **Push to Phone**: Copy merged APK directly to your Android device via WebUSB
   - Uses ya-webadb for ADB connection through the browser
   - Automatically detects WebUSB support
-  - Pushes APK to `/data/local/tmp/` on your device
+  - Pushes APK to `/sdcard/` on your device
   - Shows real-time transfer progress
   - Only available in browsers that support WebUSB (Chrome, Edge)
 - 🎨 **Modern UI**: Clean and intuitive user interface
@@ -23,38 +23,102 @@ A web application that wraps the APKEditor Java command-line tool using CheerpJ,
   - Auto-scrolls to show latest messages
   - Full keyboard accessibility
 
+## Development
+
+This project is built with TypeScript and bundled with Vite for optimal performance.
+
+### Prerequisites
+
+- Node.js 20 or higher
+- npm
+
+### Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Type check
+npm run type-check
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### Project Structure
+
+```
+src/
+├── main.ts          # Entry point
+├── types.ts         # TypeScript type definitions
+├── state.ts         # Application state management
+├── dom.ts           # DOM element references
+├── cheerpj.ts       # CheerpJ integration
+├── adb.ts           # ADB/WebUSB functionality
+├── file-handling.ts # File upload and validation
+├── processor.ts     # File processing logic
+├── console.ts       # Console UI handlers
+└── ui.ts            # UI helper functions
+```
+
 ## How It Works
 
 1. The application uses [CheerpJ](https://leaningtech.com/cheerpj/) to run Java applications in the browser
-2. Users select an APK file through the web interface
+2. Users select an APK bundle file (APKM, XAPK, or APKS) through the web interface
 3. The file is written to CheerpJ's virtual filesystem
 4. APKEditor.jar processes the file (merge operation)
 5. The processed file is read from the virtual filesystem and downloaded
 
-## Setup
+## Deployment
 
 ### Prerequisites
 
-- A web server to host the files (e.g., Apache, Nginx, or a simple HTTP server)
+- A web server to host the files (e.g., Apache, Nginx, or GitHub Pages)
 - The `APKEditor.jar` file must be available at `/app/APKEditor.jar` on your web server
 
-### Deployment
+### GitHub Pages Deployment
 
-1. Clone this repository
-2. Place the `APKEditor.jar` file in the `/app/` directory on your web server
-3. Serve the `index.html` file from your web server
-4. Open the application in a modern web browser
+This project includes a GitHub Actions workflow that automatically builds and deploys to GitHub Pages on push to the main branch.
+
+1. Enable GitHub Pages in your repository settings
+2. Set the source to "GitHub Actions"
+3. Push to the main branch
+4. The workflow will automatically build and deploy
+
+### Manual Deployment
+
+```bash
+# Build the project
+npm run build
+
+# The dist/ folder contains the production build
+# Upload the contents to your web server
+```
 
 ### Local Testing
 
-For local testing, you can use Python's built-in HTTP server:
+For local testing with the production build:
 
 ```bash
-# In the repository directory
-python3 -m http.server 8000
+# Build the project
+npm run build
+
+# Preview the build
+npm run preview
 ```
 
-Then open `http://localhost:8000` in your browser.
+Or serve the dist folder with any static file server:
+
+```bash
+# Using Python
+python3 -m http.server 8000 --directory dist
+```
 
 **Note**: You'll need to ensure `APKEditor.jar` is available at the correct path for the application to work properly.
 
@@ -79,8 +143,8 @@ After processing your APK, you can push it directly to your Android device:
 2. Connect your Android device to your computer via USB
 3. Click the **"📱 Push to Phone"** button (appears after processing)
 4. Select your device from the browser's USB device picker
-5. The APK will be pushed to `/data/local/tmp/` on your device
-6. You can then install it using a file manager or `adb install`
+5. The APK will be pushed to `/sdcard/` on your device
+6. You can then install it using a file manager or access it via ADB
 
 **Requirements:**
 - WebUSB-compatible browser (Chrome 61+, Edge 79+, Opera 48+)
