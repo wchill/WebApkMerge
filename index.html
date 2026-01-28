@@ -178,6 +178,116 @@
             width: 0%;
             transition: width 0.3s ease;
         }
+
+        .console-container {
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .console-container.show {
+            display: block;
+        }
+
+        .console-header {
+            background: #2d2d2d;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .console-header:hover {
+            background: #3d3d3d;
+        }
+
+        .console-title {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .console-toggle {
+            color: #aaa;
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .console-toggle.expanded {
+            transform: rotate(180deg);
+        }
+
+        .console-body {
+            background: #1e1e1e;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .console-body.show {
+            display: block;
+        }
+
+        .console-line {
+            color: #d4d4d4;
+            margin: 2px 0;
+            word-wrap: break-word;
+        }
+
+        .console-line.stdout {
+            color: #9cdcfe;
+        }
+
+        .console-line.stderr {
+            color: #f48771;
+        }
+
+        .console-line.info {
+            color: #4ec9b0;
+        }
+
+        .console-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .console-body::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+
+        .console-body::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .console-body::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+
+        .console-clear-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .console-clear-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -205,6 +315,20 @@
         </div>
 
         <div class="status" id="status" role="status" aria-live="polite"></div>
+
+        <div class="console-container" id="consoleContainer">
+            <div class="console-header" id="consoleHeader">
+                <div class="console-title">
+                    <span>🖥️</span>
+                    <span>Console Output</span>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="console-clear-btn" id="consoleClearBtn" title="Clear console">Clear</button>
+                    <span class="console-toggle" id="consoleToggle">▼</span>
+                </div>
+            </div>
+            <div class="console-body" id="consoleBody"></div>
+        </div>
     </div>
 
     <script src="https://cjrtnc.leaningtech.com/3.0/cj3loader.js"></script>
