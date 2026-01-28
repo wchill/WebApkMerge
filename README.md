@@ -59,6 +59,13 @@ Then open `http://localhost:8000` in your browser.
 
 The application uses CheerpJ 3.0 to run the Java JAR file directly in the browser. CheerpJ creates a virtual filesystem where input and output files are managed.
 
+**Note**: The CheerpJ integration requires proper implementation of the virtual filesystem API. The current implementation includes placeholders for:
+- File system operations (reading/writing files)
+- Directory creation
+- JAR execution
+
+These operations need to be implemented according to the CheerpJ 3.0 API documentation for full functionality.
+
 ### File Processing Flow
 
 ```
