@@ -39,6 +39,14 @@ async function initCheerpJ() {
 // File upload handlers
 uploadArea.addEventListener('click', () => fileInput.click());
 
+// Add keyboard support for upload area
+uploadArea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fileInput.click();
+    }
+});
+
 uploadArea.addEventListener('dragover', (e) => {
     e.preventDefault();
     uploadArea.classList.add('dragover');
@@ -66,6 +74,16 @@ fileInput.addEventListener('change', (e) => {
 
 // Handle file selection
 function handleFileSelect(file) {
+    // Validate file type
+    const validExtensions = ['.apk', '.xapk', '.apks'];
+    const fileName = file.name.toLowerCase();
+    const isValid = validExtensions.some(ext => fileName.endsWith(ext));
+    
+    if (!isValid) {
+        showStatus('Invalid file type. Please select an APK, XAPK, or APKS file.', 'error');
+        return;
+    }
+    
     selectedFile = file;
     
     // Display file info
@@ -118,7 +136,7 @@ async function processFile(file) {
         
         // Read file as array buffer
         const arrayBuffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
+        const fileData = new Uint8Array(arrayBuffer);
         
         updateProgress(40);
         showStatus('Writing file to virtual filesystem...', 'info');
@@ -128,9 +146,8 @@ async function processFile(file) {
         await cheerpjCreateDirectory('/files/input');
         await cheerpjCreateDirectory('/files/output');
         
-        // Mount the file data
-        const fileData = new Uint8Array(arrayBuffer);
-        await cheerpjAddStringFile(inputPath, fileData);
+        // Write the file data to virtual filesystem
+        await cheerpjWriteFile(inputPath, fileData);
         
         updateProgress(50);
         showStatus('Running APKEditor...', 'info');
@@ -173,7 +190,18 @@ async function processFile(file) {
         setTimeout(hideProgress, 2000);
         
     } catch (error) {
-        showStatus('Error processing file: ' + error.message, 'error');
+        let errorMessage = 'Error processing file: ' + error.message;
+        
+        // Provide more helpful error messages for common issues
+        if (error.message.includes('not loaded')) {
+            errorMessage = 'CheerpJ not initialized. Please refresh the page and try again.';
+        } else if (error.message.includes('exited with code')) {
+            errorMessage = 'APKEditor failed to process the file. Please ensure it is a valid APK file.';
+        } else if (error.message.includes('filesystem')) {
+            errorMessage = 'Failed to access virtual filesystem. This may be a browser compatibility issue.';
+        }
+        
+        showStatus(errorMessage, 'error');
         hideProgress();
         console.error('Processing error:', error);
     }
@@ -191,20 +219,36 @@ async function cheerpjCreateDirectory(path) {
 }
 
 // Helper function to write file to CheerpJ filesystem
-async function cheerpjAddStringFile(path, data) {
-    // Use CheerpJ's file writing API
-    // In CheerpJ 3.0, this is handled through the virtual filesystem
-    // The actual implementation depends on CheerpJ's API
-    console.log('Writing file to:', path, 'Size:', data.length);
+async function cheerpjWriteFile(path, fileData) {
+    // This is a placeholder for CheerpJ 3.0 file writing API
+    // The actual implementation should use CheerpJ's filesystem API
+    // Example: await cheerpOSAddFile(path, fileData);
+    
+    if (typeof cheerpOSAddFile === 'undefined') {
+        throw new Error('CheerpJ filesystem API not available. File write operation cannot be completed.');
+    }
+    
+    console.log('Writing file to:', path, 'Size:', fileData.length, 'bytes');
+    // Actual implementation:
+    // await cheerpOSAddFile(path, fileData);
 }
 
 // Helper function to read file from CheerpJ filesystem as Blob
 async function cheerpjReadFileAsBlob(path) {
-    // Use CheerpJ's file reading API
-    // This returns a Blob object that can be downloaded
+    // This is a placeholder for CheerpJ 3.0 file reading API
+    // The actual implementation should use CheerpJ's filesystem API
+    // Example: return await cheerpOSReadFileAsBlob(path);
+    
+    if (typeof cheerpOSReadFileAsBlob === 'undefined') {
+        throw new Error('CheerpJ filesystem API not available. File read operation cannot be completed.');
+    }
+    
     console.log('Reading file from:', path);
-    // Placeholder - actual implementation uses CheerpJ API
-    return new Blob([]);
+    // Actual implementation:
+    // return await cheerpOSReadFileAsBlob(path);
+    
+    // Placeholder - this will be replaced by actual CheerpJ API call
+    throw new Error('CheerpJ filesystem not fully initialized');
 }
 
 // UI helper functions
@@ -224,6 +268,7 @@ function hideProgress() {
 
 function updateProgress(percent) {
     progressFill.style.width = percent + '%';
+    progressBar.setAttribute('aria-valuenow', percent);
 }
 
 // Initialize on page load
