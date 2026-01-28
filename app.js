@@ -1,7 +1,16 @@
+// Import ya-webadb libraries
+import { Adb } from 'https://esm.sh/@yume-chan/adb@0.0.24';
+import { AdbDaemonWebUsbDeviceManager } from 'https://esm.sh/@yume-chan/adb-daemon-webusb@0.0.24';
+import { ConsumableWritableStream } from 'https://esm.sh/@yume-chan/stream-extra@0.0.24';
+
 // State management
 let selectedFile = null;
 let cheerpjReady = false;
 let consoleExpanded = false;
+let processedBlob = null;
+let processedFileName = null;
+let webUsbSupported = false;
+let adbDevice = null;
 
 // DOM elements
 const uploadArea = document.getElementById('uploadArea');
@@ -10,6 +19,7 @@ const fileInfo = document.getElementById('fileInfo');
 const fileName = document.getElementById('fileName');
 const fileSize = document.getElementById('fileSize');
 const processBtn = document.getElementById('processBtn');
+const pushToPhoneBtn = document.getElementById('pushToPhoneBtn');
 const status = document.getElementById('status');
 const progressBar = document.getElementById('progressBar');
 const progressFill = document.getElementById('progressFill');
@@ -40,6 +50,21 @@ async function initCheerpJ() {
         showStatus('Failed to initialize CheerpJ: ' + error.message, 'error');
         hideProgress();
         console.error('CheerpJ initialization error:', error);
+    }
+}
+
+// Check WebUSB support
+function checkWebUsbSupport() {
+    if ('usb' in navigator) {
+        webUsbSupported = true;
+        console.log('WebUSB is supported');
+    } else {
+        webUsbSupported = false;
+        console.log('WebUSB is not supported');
+        // Add a note that ADB push won't be available
+        if (pushToPhoneBtn) {
+            pushToPhoneBtn.title = 'WebUSB not supported in this browser';
+        }
     }
 }
 
@@ -194,6 +219,10 @@ async function processFile(file) {
         const outputBlob = await cheerpjReadFileAsBlob(outputPath);
         appendToConsole(`Output file read: ${outputPath}`, 'stdout');
         
+        // Store the blob and filename for ADB push later
+        processedBlob = outputBlob;
+        processedFileName = outputFileName;
+        
         updateProgress(90);
         showStatus('Preparing download...', 'info');
         
@@ -211,6 +240,13 @@ async function processFile(file) {
         updateProgress(100);
         showStatus('File processed and downloaded successfully!', 'success');
         appendToConsole(`=== Process Complete: ${outputFileName} downloaded ===`, 'info');
+        
+        // Enable push to phone button if WebUSB is supported
+        if (webUsbSupported) {
+            pushToPhoneBtn.classList.add('show');
+            pushToPhoneBtn.disabled = false;
+            appendToConsole('Push to Phone button enabled', 'info');
+        }
         
         // Hide progress after a delay
         setTimeout(hideProgress, 2000);
@@ -237,6 +273,123 @@ async function processFile(file) {
         console.error('Processing error:', error);
     }
 }
+
+// ADB Push functionality
+async function pushToPhone() {
+    if (!processedBlob || !processedFileName) {
+        showStatus('No processed file available to push', 'error');
+        return;
+    }
+
+    pushToPhoneBtn.disabled = true;
+    showConsole();
+    appendToConsole('=== Starting ADB Push to Phone ===', 'info');
+    showStatus('Connecting to device...', 'info');
+    showProgress();
+    updateProgress(10);
+
+    try {
+        // Request USB device
+        appendToConsole('Requesting USB device access...', 'info');
+        const manager = AdbDaemonWebUsbDeviceManager.BROWSER;
+        const devices = await manager.getDevices();
+        
+        let device;
+        if (devices.length === 0) {
+            appendToConsole('No devices found, requesting device selection...', 'info');
+            device = await manager.requestDevice();
+        } else {
+            device = devices[0];
+            appendToConsole(`Found device: ${device.serial}`, 'stdout');
+        }
+
+        updateProgress(20);
+        
+        // Connect to device
+        appendToConsole('Connecting to device...', 'info');
+        const connection = await device.connect();
+        
+        updateProgress(30);
+        
+        // Authenticate
+        appendToConsole('Authenticating with device...', 'info');
+        const transport = await connection.createTransport();
+        adbDevice = await Adb.authenticate(transport);
+        
+        appendToConsole(`Connected to device: ${device.serial}`, 'stdout');
+        updateProgress(40);
+        
+        // Prepare file for push
+        const devicePath = `/data/local/tmp/${processedFileName}`;
+        appendToConsole(`Target path: ${devicePath}`, 'info');
+        
+        updateProgress(50);
+        showStatus('Pushing file to device...', 'info');
+        appendToConsole('Starting file transfer...', 'info');
+        
+        // Convert blob to stream
+        const fileStream = processedBlob.stream();
+        
+        // Create sync service and push file
+        const sync = await adbDevice.sync();
+        updateProgress(60);
+        
+        // Push the file
+        appendToConsole(`Pushing ${processedFileName} to ${devicePath}...`, 'stdout');
+        await sync.write(
+            devicePath,
+            fileStream,
+            0o644, // file permissions
+            processedBlob.size,
+            (progress) => {
+                const percent = Math.floor((progress / processedBlob.size) * 100);
+                updateProgress(60 + (percent * 0.3)); // 60-90% range for transfer
+                if (percent % 10 === 0) {
+                    appendToConsole(`Transfer progress: ${percent}%`, 'stdout');
+                }
+            }
+        );
+        
+        await sync.close();
+        updateProgress(95);
+        
+        appendToConsole(`File pushed successfully to ${devicePath}`, 'stdout');
+        appendToConsole('=== ADB Push Complete ===', 'info');
+        
+        updateProgress(100);
+        showStatus('File pushed to phone successfully!', 'success');
+        
+        setTimeout(() => {
+            hideProgress();
+        }, 2000);
+        
+    } catch (error) {
+        appendToConsole('=== ADB PUSH ERROR ===', 'stderr');
+        appendToConsole(error.message, 'stderr');
+        if (error.stack) {
+            appendToConsole(error.stack, 'stderr');
+        }
+        
+        let errorMessage = 'Failed to push file to phone: ' + error.message;
+        
+        if (error.message.includes('No device selected')) {
+            errorMessage = 'No device selected. Please connect your phone and try again.';
+        } else if (error.message.includes('denied')) {
+            errorMessage = 'USB access denied. Please grant permission and try again.';
+        }
+        
+        showStatus(errorMessage, 'error');
+        hideProgress();
+        console.error('ADB Push error:', error);
+    } finally {
+        pushToPhoneBtn.disabled = false;
+    }
+}
+
+// Push to phone button handler
+pushToPhoneBtn.addEventListener('click', async () => {
+    await pushToPhone();
+});
 
 // Helper function to create directory in CheerpJ filesystem
 async function cheerpjCreateDirectory(path) {
@@ -388,5 +541,6 @@ consoleCopyBtn.addEventListener('click', (e) => {
 // Initialize on page load
 window.addEventListener('load', () => {
     console.log('Initializing WebApkMerge...');
+    checkWebUsbSupport();
     initCheerpJ();
 });

@@ -131,6 +131,34 @@
             cursor: not-allowed;
         }
 
+        .button-secondary {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s ease;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        .button-secondary.show {
+            display: block;
+        }
+
+        .button-secondary:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .button-secondary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .status {
             text-align: center;
             margin-top: 20px;
@@ -330,6 +358,8 @@
 
         <button class="button" id="processBtn" disabled>Process File</button>
 
+        <button class="button-secondary" id="pushToPhoneBtn" disabled title="Push APK to phone via ADB">📱 Push to Phone</button>
+
         <div class="progress-bar" id="progressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
             <div class="progress-fill" id="progressFill"></div>
         </div>
@@ -353,6 +383,6 @@
     </div>
 
     <script src="https://cjrtnc.leaningtech.com/3.0/cj3loader.js"></script>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
