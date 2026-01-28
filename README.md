@@ -8,6 +8,12 @@ A web application that wraps the APKEditor Java command-line tool using CheerpJ,
 - 🚀 **Browser-based Processing**: Runs Java applications directly in the browser using CheerpJ
 - 💾 **Easy Download**: Automatically downloads the processed file
 - 🎨 **Modern UI**: Clean and intuitive user interface
+- 🖥️ **Terminal Console**: View real-time output from APKEditor processing
+  - Hidden by default, automatically shown during processing
+  - Collapsible interface with click-to-expand header
+  - Color-coded output (info, stdout, stderr)
+  - Clear button to reset console output
+  - Auto-scrolls to show latest messages
 
 ## How It Works
 
@@ -52,6 +58,19 @@ Then open `http://localhost:8000` in your browser.
 4. Click the "Process File" button
 5. Wait for processing to complete
 6. The processed file will automatically download
+
+### Console Output
+
+The application includes a terminal-like console that displays output from the APKEditor processing:
+
+- **Hidden by default**: The console only appears when you start processing a file
+- **Expand/Collapse**: Click the console header to toggle between collapsed and expanded views
+- **Color-coded messages**:
+  - Cyan: Informational messages about process steps
+  - Blue: Standard output from APKEditor
+  - Red: Error messages
+- **Clear button**: Click "Clear" to reset the console output
+- **Auto-scroll**: The console automatically scrolls to show the latest output
 
 ## Technical Details
 
