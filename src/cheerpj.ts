@@ -49,18 +49,6 @@ export async function initCheerpJ(): Promise<void> {
       throw new Error('CheerpJ library not loaded. Please check your internet connection.');
     }
 
-    await new Promise(function(resolve, reject) {
-        const deleteRequest = window.indexedDB.deleteDatabase('cjFS_/files/')
-        deleteRequest.onerror = (event) => {
-            console.error("Error deleting database", event);
-            reject(event);
-        }
-        deleteRequest.onsuccess = (event) => {
-            console.log("Database deleted successfully");
-            resolve(event);
-        }
-    });
-
     await window.cheerpjInit({ version: 11, execCallback: execCb, preloadResources: preload });
     state.cheerpjStdlib = await window.cheerpjRunLibrary("");
     state.cheerpjReady = true;
@@ -127,4 +115,25 @@ export async function cheerpjReadFileAsBlob(path: string): Promise<Blob> {
   // Read the file as a Blob
   const blob = await window.cjFileBlob(path);
   return blob;
+}
+
+export async function cheerpjListFiles(dir: string): Promise<string[]> {
+  const lib = state.cheerpjStdlib;
+  const File = await lib.java.io.File;
+  const rootFile = await new File(dir);
+  const files = await rootFile.listFiles();
+
+  const retval = [];
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    retval.push(await f.getName());
+  }
+  return retval;
+}
+
+export async function cheerpjDeleteFile(path: string): Promise<void> {
+  const lib = state.cheerpjStdlib;
+  const File = await lib.java.io.File;
+  const f = await new File(path);
+  await f.delete();
 }

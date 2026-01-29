@@ -12,6 +12,7 @@ import {
   cheerpjWriteFile, 
   cheerpjReadFileAsBlob,
   cheerpjCopyFromStrToFiles,
+  cheerpjDeleteFile
 } from './cheerpj';
 import { formatFileSize } from './file-handling';
 
@@ -40,6 +41,10 @@ export async function processFile(file: File): Promise<void> {
     const outputPath = '/files/' + outputFileName;
     
     updateProgress(30);
+
+    showStatus('Deleting existing output file if it exists...', 'info');
+    appendToConsole('Deleting existing output file if it exists...', 'info');
+    await cheerpjDeleteFile(outputPath);
     
     // Read file as array buffer
     const arrayBuffer = await file.arrayBuffer();
@@ -99,7 +104,11 @@ export async function processFile(file: File): Promise<void> {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
+    updateProgress(99);
+    appendToConsole('Cleaning up...', 'info');
+    await cheerpjDeleteFile(outputPath);
+
     updateProgress(100);
     showStatus('File processed and downloaded successfully!', 'success');
     appendToConsole(`=== Process Complete: ${outputFileName} downloaded ===`, 'info');
