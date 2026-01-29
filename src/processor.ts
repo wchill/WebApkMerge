@@ -10,7 +10,8 @@ import {
 } from './ui';
 import { 
   cheerpjWriteFile, 
-  cheerpjReadFileAsBlob 
+  cheerpjReadFileAsBlob,
+  cheerpjCopyFromStrToFiles,
 } from './cheerpj';
 import { formatFileSize } from './file-handling';
 
@@ -28,14 +29,15 @@ export async function processFile(file: File): Promise<void> {
   dom.consoleHeader.setAttribute('aria-expanded', 'true');
   appendToConsole('=== Starting APKEditor Process ===', 'info');
   appendToConsole(`Input file: ${file.name} (${formatFileSize(file.size)})`, 'info');
-  
+
   try {
     // Create virtual file system paths
     // Input file goes to /str/ (JavaScript writes here, Java reads from here)
-    const inputPath = '/str/' + file.name;
+    const tempPath = '/str/' + file.name;
+    const inputPath = '/files/' + file.name;
     const outputFileName = file.name.replace(/\.(apkm|xapk|apks)$/i, '_merged.apk');
     // Output file goes to /files/ (Java writes here, JavaScript reads from here)
-    const outputPath = '/files/output/' + outputFileName;
+    const outputPath = '/files/' + outputFileName;
     
     updateProgress(30);
     
@@ -50,16 +52,17 @@ export async function processFile(file: File): Promise<void> {
     // Write input file to CheerpJ /str/ virtual filesystem
     // No need to create directories for /str/ - it's automatically available
     // Write the file data to virtual filesystem
-    await cheerpjWriteFile(inputPath, fileData);
+    await cheerpjWriteFile(tempPath, fileData);
+    await cheerpjCopyFromStrToFiles(tempPath, inputPath);
     appendToConsole(`File written to: ${inputPath}`, 'stdout');
     
     updateProgress(50);
     showStatus('Running APKEditor...', 'info');
-    appendToConsole(`Executing: java -jar /app/APKEditor.jar m -i ${inputPath} -o ${outputPath}`, 'info');
+    appendToConsole(`Executing: java -jar APKEditor.jar m -i ${inputPath} -o ${outputPath}`, 'info');
     
     // Run the Java application
     // Command: java -jar /app/APKEditor.jar m -i <input> -o <output>
-    const result = await window.cheerpjRunJar('/app/APKEditor.jar', 
+    const result = await window.cheerpjRunJar('/app/APKEditor-1.4.7.jar',
       'm', '-i', inputPath, '-o', outputPath);
     
     updateProgress(70);

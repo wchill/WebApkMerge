@@ -54,6 +54,16 @@
             margin-bottom: 20px;
         }
 
+        .upload-area.disabled {
+            pointer-events:none;
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none;
+        }
+
         .upload-area:hover {
             background-color: #f8f9ff;
             border-color: #764ba2;
@@ -101,6 +111,7 @@
             font-weight: 600;
             color: #333;
             margin-bottom: 5px;
+            overflow-wrap: anywhere;
         }
 
         .file-size {
@@ -343,7 +354,13 @@
         <h1>🚀 WebApkMerge</h1>
         <p class="subtitle">Process APK files directly in your browser</p>
 
-        <div class="upload-area" id="uploadArea" role="button" aria-label="Click to select a file or drag and drop a file here" tabindex="0">
+        <!-- TODO: This stuff would benefit from using a proper React framework eventually. -->
+        <div class="upload-area disabled" id="uploadAreaWaiting" role="button" aria-label="Waiting for CheerpJ runtime to initialize..." tabindex="0">
+            <div class="upload-icon">⏳</div>
+            <div class="upload-text">Waiting for CheerpJ runtime to initialize...</div>
+            <div class="upload-hint">Please wait...</div>
+        </div>
+        <div class="upload-area hidden" id="uploadArea" role="button" aria-label="Click to select a file or drag and drop a file here" tabindex="0">
             <div class="upload-icon">📁</div>
             <div class="upload-text">Click to select a file or drag it here</div>
             <div class="upload-hint">Supported: APKM, XAPK, APKS files</div>
@@ -379,10 +396,11 @@
                 </div>
             </div>
             <div class="console-body" id="consoleBody" role="region" aria-label="Console output"></div>
+            <div id="console" style="display: none"></div>
         </div>
     </div>
 
-    <script src="https://cjrtnc.leaningtech.com/3.0/cj3loader.js"></script>
+    <script src="https://cjrtnc.leaningtech.com/4.2/loader.js"></script>
     <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

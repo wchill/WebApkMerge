@@ -1,6 +1,7 @@
 // DOM element references
 export const dom = {
   uploadArea: document.getElementById('uploadArea') as HTMLElement,
+  uploadAreaWaiting: document.getElementById('uploadAreaWaiting') as HTMLElement,
   fileInput: document.getElementById('fileInput') as HTMLInputElement,
   fileInfo: document.getElementById('fileInfo') as HTMLElement,
   fileName: document.getElementById('fileName') as HTMLElement,
@@ -16,4 +17,5 @@ export const dom = {
   consoleToggle: document.getElementById('consoleToggle') as HTMLElement,
   consoleClearBtn: document.getElementById('consoleClearBtn') as HTMLButtonElement,
   consoleCopyBtn: document.getElementById('consoleCopyBtn') as HTMLButtonElement,
+  consoleBuffer: document.getElementById('console') as HTMLElement,
 };

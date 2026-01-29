@@ -1,8 +1,11 @@
-import { Adb } from '@yume-chan/adb';
+import { Adb, AdbDaemonTransport } from '@yume-chan/adb';
 import { AdbDaemonWebUsbDeviceManager } from '@yume-chan/adb-daemon-webusb';
+import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
 import { state } from './state';
 import { dom } from './dom';
 import { showStatus, showProgress, hideProgress, updateProgress, showConsole, appendToConsole } from './ui';
+
+let credentialStore: AdbWebCredentialStore | null = null;
 
 export function checkWebUsbSupport(): void {
   if ('usb' in navigator) {
@@ -16,6 +19,13 @@ export function checkWebUsbSupport(): void {
       dom.pushToPhoneBtn.title = 'WebUSB not supported in this browser';
     }
   }
+}
+
+async function getCredentialStore(): Promise<AdbWebCredentialStore> {
+  if (!credentialStore) {
+    credentialStore = new AdbWebCredentialStore();
+  }
+  return credentialStore;
 }
 
 export async function pushToPhone(): Promise<void> {
@@ -32,40 +42,45 @@ export async function pushToPhone(): Promise<void> {
   updateProgress(10);
 
   try {
-    // Request USB device
-    appendToConsole('Requesting USB device access...', 'info');
-    const manager = AdbDaemonWebUsbDeviceManager.BROWSER!;
-    const devices = await manager.getDevices();
-    
-    let device;
-    if (devices.length === 0) {
-      appendToConsole('No devices found, requesting device selection...', 'info');
-      device = await manager.requestDevice();
-    } else {
-      device = devices[0];
-      appendToConsole(`Found device: ${device.serial}`, 'stdout');
-    }
+    if (state.adbDevice === null) {
+        // Request USB device
+        appendToConsole('Requesting USB device access...', 'info');
+        const manager = AdbDaemonWebUsbDeviceManager.BROWSER!;
+        const devices = await manager.getDevices();
 
-    updateProgress(20);
-    
-    if (!device) {
-      throw new Error('No device selected');
+        let device;
+        if (devices.length === 0) {
+          appendToConsole('No devices found, requesting device selection...', 'info');
+          device = await manager.requestDevice();
+        } else {
+          device = devices[0];
+          appendToConsole(`Found device: ${device.serial}`, 'stdout');
+        }
+
+        updateProgress(20);
+
+        if (!device) {
+          throw new Error('No device selected');
+        }
+
+        // Connect to device
+        appendToConsole('Connecting to device...', 'info');
+        const connection = await device.connect();
+
+        updateProgress(30);
+
+        // Authenticate
+        appendToConsole('Authenticating with device...', 'info');
+        const transport = await AdbDaemonTransport.authenticate({
+          serial: device.serial,
+          connection,
+          credentialStore: await getCredentialStore(),
+        });
+
+        state.adbDevice = new Adb(transport);
+
+        appendToConsole(`Connected to device: ${device.serial}`, 'stdout');
     }
-    
-    // Connect to device
-    appendToConsole('Connecting to device...', 'info');
-    const connection = await device.connect();
-    
-    updateProgress(30);
-    
-    // Authenticate
-    appendToConsole('Authenticating with device...', 'info');
-    // @ts-ignore - ADB types are incomplete
-    const transport = await connection.createTransport();
-    // @ts-ignore - ADB types are incomplete
-    state.adbDevice = await Adb.authenticate(transport);
-    
-    appendToConsole(`Connected to device: ${device.serial}`, 'stdout');
     updateProgress(40);
     
     // Prepare file for push
@@ -82,24 +97,16 @@ export async function pushToPhone(): Promise<void> {
     // Create sync service and push file
     const sync = await state.adbDevice.sync();
     updateProgress(60);
-    
+
     // Push the file
     appendToConsole(`Pushing ${state.processedFileName} to ${devicePath}...`, 'stdout');
-    await sync.write(
-      devicePath,
-      fileStream,
-      0o644, // file permissions
-      state.processedBlob.size,
-      (progress: number) => {
-        const percent = Math.floor((progress / state.processedBlob!.size) * 100);
-        updateProgress(60 + (percent * 0.3)); // 60-90% range for transfer
-        if (percent % 10 === 0) {
-          appendToConsole(`Transfer progress: ${percent}%`, 'stdout');
-        }
-      }
-    );
+    await sync.write({
+      filename: devicePath,
+      file: fileStream,
+      permission: 0o644, // file permissions
+    });
     
-    await sync.close();
+    await sync.dispose();
     updateProgress(95);
     
     appendToConsole(`File pushed successfully to ${devicePath}`, 'stdout');

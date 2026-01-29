@@ -1,6 +1,7 @@
 export interface AppState {
   selectedFile: File | null;
   cheerpjReady: boolean;
+  cheerpjStdlib: any | null;
   consoleExpanded: boolean;
   processedBlob: Blob | null;
   processedFileName: string | null;

@@ -6,14 +6,14 @@ import { setupProcessButton } from './processor';
 import { dom } from './dom';
 
 // Initialize on page load
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   console.log('Initializing WebApkMerge...');
   
   // Check WebUSB support
   checkWebUsbSupport();
   
   // Initialize CheerpJ
-  initCheerpJ();
+  const cheerpjInitPromise = initCheerpJ();
   
   // Setup event handlers
   setupFileUploadHandlers();
@@ -24,4 +24,8 @@ window.addEventListener('load', () => {
   dom.pushToPhoneBtn.addEventListener('click', async () => {
     await pushToPhone();
   });
+
+  await cheerpjInitPromise;
+  dom.uploadAreaWaiting.classList.add('hidden');
+  dom.uploadArea.classList.remove('hidden');
 });

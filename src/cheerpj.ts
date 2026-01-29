@@ -3,11 +3,40 @@ import { showStatus, hideProgress } from './ui';
 
 declare global {
   interface Window {
-    cheerpjInit: () => Promise<void>;
+    cheerpjInit(options?: {
+      version?: number;
+      status?: "splash" | "none" | "default";
+      logCanvasUpdates?: boolean;
+      preloadResources?: { [key: string]: number[] };
+      preloadProgress?: (preloadDone: number, preloadTotal: number) => void;
+      clipboardMode?: "permission" | "system" | "java";
+      beepCallback?: () => void;
+      enableInputMethods?: boolean;
+      overrideShortcuts?: (evt: KeyboardEvent) => boolean;
+      appletParamFilter?: (originalName: string, paramValue: string) => string;
+      natives?: { [method: string]: Function };
+      overrideDocumentBase?: string;
+      javaProperties?: string[];
+      tailscaleControlUrl?: string;
+      tailscaleDnsIp?: string;
+      tailscaleAuthKey?: string;
+      tailscaleLoginUrlCb?: (url: string) => void;
+      tailscaleIpCb?: (ip: string) => void;
+      licenseKey?: string;
+      execCallback?: (cmdPath: string, argsArray: string[]) => void;
+      enableDebug?: boolean;
+    }): Promise<void>;
+    cheerpjRunLibrary: (libPath: string) => Promise<any>;
     cheerpjRunJar: (jarPath: string, ...args: string[]) => Promise<number>;
     cheerpOSAddStringFile: (path: string, data: string | Uint8Array) => void;
     cjFileBlob: (path: string) => Promise<Blob>;
   }
+}
+
+const preload = {"/lt/11/lib/modules":[0,131072,1441792,4063232,4194304,4587520,4849664,5636096,5767168,6160384,6291456,6422528,6553600,6946816,7602176,7864320,9306112,9437184,9830400,9961472,18481152,18612224,41156608,41287680,43253760,43384832],"/lt/etc/users":[0,131072],"/lt/etc/localtime":[],"/lt/11/jre/lib/cheerpj-handlers.jar":[0,131072],"/lt/11/jre/lib/cheerpj-awt.jar":[0,131072],"/lt/11/jre/lib/cheerpj-jsobject.jar":[0,131072],"/lt/11/conf/security/java.security":[0,131072],"/lt/etc/timezone":[],"/lt/11/lib/tzdb.dat":[0,131072]}
+
+function execCb(cmdPath: string, argsArray: any) {
+  console.log(`Running external command: ${cmdPath} with arguments: ${argsArray}`);
 }
 
 export async function initCheerpJ(): Promise<void> {
@@ -19,8 +48,21 @@ export async function initCheerpJ(): Promise<void> {
     if (typeof window.cheerpjInit === 'undefined') {
       throw new Error('CheerpJ library not loaded. Please check your internet connection.');
     }
-    
-    await window.cheerpjInit();
+
+    await new Promise(function(resolve, reject) {
+        const deleteRequest = window.indexedDB.deleteDatabase('cjFS_/files/')
+        deleteRequest.onerror = (event) => {
+            console.error("Error deleting database", event);
+            reject(event);
+        }
+        deleteRequest.onsuccess = (event) => {
+            console.log("Database deleted successfully");
+            resolve(event);
+        }
+    });
+
+    await window.cheerpjInit({ version: 11, execCallback: execCb, preloadResources: preload });
+    state.cheerpjStdlib = await window.cheerpjRunLibrary("");
     state.cheerpjReady = true;
     showStatus('CheerpJ ready! Select a file to begin.', 'success');
     hideProgress();
@@ -58,6 +100,18 @@ export async function cheerpjWriteFile(path: string, fileData: Uint8Array): Prom
   // Write the file to the virtual filesystem
   // cheerpOSAddStringFile accepts both strings and Uint8Array
   window.cheerpOSAddStringFile(path, fileData);
+}
+
+export async function cheerpjCopyFromStrToFiles(srcPath: string, destPath: string): Promise<void> {
+  const lib = state.cheerpjStdlib;
+  const Files = await lib.java.nio.file.Files;
+  const StandardCopyOption = await lib.java.nio.file.StandardCopyOption;
+  const Paths = await lib.java.nio.file.Paths;
+
+  const source = await Paths.get(srcPath);
+  const target = await Paths.get(destPath);
+
+  await Files.copy(source, target, [StandardCopyOption.REPLACE_EXISTING]);
 }
 
 export async function cheerpjReadFileAsBlob(path: string): Promise<Blob> {
