@@ -59,6 +59,7 @@ export async function processFile(file: File): Promise<void> {
     // Write the file data to virtual filesystem
     await cheerpjWriteFile(tempPath, fileData);
     await cheerpjCopyFromStrToFiles(tempPath, inputPath);
+    await cheerpjWriteFile(tempPath, new Uint8Array(0))
     appendToConsole(`File written to: ${inputPath}`, 'stdout');
     
     updateProgress(50);
@@ -67,7 +68,7 @@ export async function processFile(file: File): Promise<void> {
     
     // Run the Java application
     // Command: java -jar /app/APKEditor.jar m -i <input> -o <output>
-    const result = await window.cheerpjRunJar('/app' + window.location.pathname + 'APKEditor-1.4.7.jar',
+    const result = await window.cheerpjRunJar('/app' + window.location.pathname + 'APKEditor-1.4.7-morphe.jar',
       'm', '-i', inputPath, '-o', outputPath);
     
     updateProgress(70);
